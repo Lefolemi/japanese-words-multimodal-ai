@@ -1,20 +1,38 @@
-import whisper
 import os
+import json
+from vosk import Model, KaldiRecognizer
+from pydub import AudioSegment
 
 class STTHandler:
-    def __init__(self, model_name="base"):
-        self.model = whisper.load_model(model_name)
+    def __init__(self):
+        # Locate vosk_weights relative to this file
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        model_path = os.path.join(base_dir, "vosk_weights")
+        
+        if not os.path.exists(model_path):
+            raise FileNotFoundError(f"Vosk weights not found at {model_path}")
+        self.model = Model(model_path)
 
     def transcribe(self, audio_path):
-        if not os.path.exists(audio_path):
-            return ""
+        # 1. Convert WebM to WAV (PCM 16kHz Mono)
+        audio = AudioSegment.from_file(audio_path)
+        audio = audio.set_frame_rate(16000).set_channels(1).set_sample_width(2)
         
-        # We use a very short, non-instructional prompt.
-        # This just sets the language/context without giving "orders" to repeat.
-        result = self.model.transcribe(
-            audio_path, 
-            language="ja",
-            initial_prompt="こんにちは、日本語の練習です。", 
-            fp16=False # Set to False if you don't have a GPU to avoid extra noise
-        )
-        return result.get("text", "").strip()
+        wav_path = audio_path.replace(".webm", ".wav")
+        audio.export(wav_path, format="wav")
+
+        # 2. Process with Vosk
+        with open(wav_path, "rb") as f:
+            rec = KaldiRecognizer(self.model, 16000)
+            while True:
+                data = f.read(4000)
+                if len(data) == 0:
+                    break
+                rec.AcceptWaveform(data)
+        
+        # 3. Cleanup and Result
+        result = json.loads(rec.FinalResult())
+        if os.path.exists(wav_path):
+            os.remove(wav_path)
+            
+        return result.get("text", "").replace(" ", "")

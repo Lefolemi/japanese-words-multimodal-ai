@@ -3,7 +3,7 @@ let audioChunks = [];
 
 /**
  * Initializes the microphone and starts recording.
- * Uses MediaRecorder to capture raw audio for Whisper.
+ * Uses MediaRecorder with a timeslice for more reliable data capture.
  */
 async function startRecording() {
     audioChunks = []; // Clear previous recording data
@@ -11,35 +11,50 @@ async function startRecording() {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         
-        // Standard webm format is best for Whisper
+        // Standard webm format
         mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
 
         mediaRecorder.ondataavailable = (event) => {
-            if (event.data.size > 0) {
+            if (event.data && event.data.size > 0) {
                 audioChunks.push(event.data);
             }
         };
 
         mediaRecorder.onstop = () => {
-            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-            const currentWordId = document.getElementById('current-word-id').value;
-
-            console.log("Recording stopped. Blob size:", audioBlob.size);
-
-            // Call the function in session.js to emit the blob
-            if (typeof sendAudioToServer === "function") {
-                sendAudioToServer(audioBlob, currentWordId);
-            } else {
-                console.error("sendAudioToServer is not defined in session.js");
+            // 1. Check if we actually captured chunks
+            if (audioChunks.length === 0) {
+                console.error("No audio chunks captured.");
                 updateUI('idle');
+                return;
+            }
+
+            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+
+            // 2. Validate blob size (WebM headers are usually > 100 bytes)
+            if (audioBlob.size < 100) {
+                console.error("Audio blob too small, likely empty.");
+                updateUI('idle');
+            } else {
+                console.log("Recording stopped. Sending blob. Size:", audioBlob.size);
+                const currentWordId = document.getElementById('current-word-id').value;
+
+                if (typeof sendAudioToServer === "function") {
+                    sendAudioToServer(audioBlob, currentWordId);
+                } else {
+                    console.error("sendAudioToServer is not defined in session.js");
+                    updateUI('idle');
+                }
             }
             
-            // Stop all tracks to release the microphone
+            // 3. Cleanup: Stop all tracks to release the microphone
             stream.getTracks().forEach(track => track.stop());
         };
 
-        mediaRecorder.start();
-        console.log("MediaRecorder started...");
+        // REQUEST DATA EVERY 100MS: This ensures data is pushed to chunks 
+        // continuously rather than only at the very end.
+        mediaRecorder.start(100); 
+        
+        console.log("MediaRecorder started with 100ms timeslices...");
         updateUI('recording');
 
     } catch (err) {

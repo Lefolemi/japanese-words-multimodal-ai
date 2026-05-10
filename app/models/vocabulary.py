@@ -1,4 +1,5 @@
 from app import db
+from datetime import datetime
 
 class Vocabulary(db.Model):
     __tablename__ = 'vocabulary'
@@ -14,7 +15,6 @@ class Vocabulary(db.Model):
     last_score = db.Column(db.Float, default=0.0)
 
     def to_dict(self):
-        """Converts the SQLAlchemy object into a dictionary for JSON serialization."""
         return {
             'id': self.id,
             'original': self.original,
@@ -28,3 +28,12 @@ class Vocabulary(db.Model):
 
     def __repr__(self):
         return f'<Word {self.original} ({self.jlpt_level})>'
+
+class PracticeAttempt(db.Model):
+    __tablename__ = 'times_practiced'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    word_id = db.Column(db.Integer, db.ForeignKey('vocabulary.id'), nullable=False)
+    score = db.Column(db.Float, nullable=False)
+    raw_stt = db.Column(db.Text)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)

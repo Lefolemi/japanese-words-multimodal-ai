@@ -2,7 +2,7 @@
 const socket = io();
 
 socket.on('connect', () => {
-    console.log("Connected to Sensei server via Whisper pipeline.");
+    console.log("Connected to Sensei server via Multimodal Vosk pipeline.");
 });
 
 /**
@@ -17,7 +17,7 @@ function updateWordDisplay() {
     document.getElementById('word-furigana').innerText = word.furigana;
     document.getElementById('word-english').innerText = word.english;
     
-    // Reset Sensei feedback for the new word
+    // Reset UI for the new word
     document.getElementById('score-display').innerText = "Score: --%";
     document.getElementById('sensei-feedback').innerText = "Ready for your pronunciation.";
     document.getElementById('user-transcription').innerText = "";
@@ -40,7 +40,6 @@ function nextWord() {
         currentIndex++;
         updateWordDisplay();
     } else {
-        // Redirect to main menu or results page
         window.location.href = "/"; 
     }
 }
@@ -57,30 +56,52 @@ function prevWord() {
  */
 
 /**
- * Sends the audio blob to the Flask-SocketIO server.
- * Called by recorder.js upon mouseup/touchend.
+ * Sends the audio blob to the server.
+ * Called by recorder.js upon stopRecording().
  */
 function sendAudioToServer(audioBlob, currentWordId) {
-    // Ensure the payload matches the backend expectations
     socket.emit('submit_audio', {
-        audio: audioBlob, // The actual binary data
+        audio: audioBlob,
         word_id: currentWordId
     });
 }
 
 /**
- * Handles the AI evaluation result from Whisper + Levenshtein
+ * Handles the AI evaluation result (Vosk + Levenshtein + TTS)
  */
 socket.on('evaluation_result', (data) => {
     const feedbackEl = document.getElementById('sensei-feedback');
     const scoreEl = document.getElementById('score-display');
     const transEl = document.getElementById('user-transcription');
+    const nextBtn = document.getElementById('next-btn');
     
-    feedbackEl.innerText = data.feedback_msg;
+    // 1. Update Text UI
+    feedbackEl.innerText = data.message;
     scoreEl.innerText = `Score: ${(data.score * 100).toFixed(0)}%`;
     transEl.innerText = `Sensei heard: "${data.user_transcription}"`;
     
-    // Re-enable the record button
+    // 2. Play Sensei's Voice (Multimodal Output)
+    if (data.audio_url) {
+        const audio = new Audio(data.audio_url);
+        audio.play().catch(e => console.error("Audio playback failed:", e));
+    }
+
+    // 3. Research Debugging (Visible in F12 Console)
+    if (data.debug) {
+        console.group("Sensei Evaluation Trace");
+        console.log("Raw STT:", data.debug.raw_stt);
+        console.log("Normalized Input:", data.debug.normalized_input);
+        console.log("Target Phonetic:", data.debug.target_phonetic);
+        console.log("Distance Logic:", data.debug.file_size_bytes, "bytes processed in", data.debug.proc_time);
+        console.groupEnd();
+    }
+    
+    // 4. Flow Control: Enable "Next" button only after result is in
+    if (nextBtn) {
+        nextBtn.disabled = false;
+    }
+
+    // 5. Re-enable the record button
     if (typeof updateUI === "function") {
         updateUI('idle');
     }
