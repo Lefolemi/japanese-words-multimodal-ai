@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Select Session</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/session.css') }}">
+</head>
+<body>
+    <div class="menu-container">
+        <h2>Vocabulary Curriculum</h2>
+        
+        {% for level in levels %}
+        <div class="level-section">
+            <h3>Level N{{ level.num }}</h3>
+            <div class="session-grid">
+                {% for i in range(level.total_sessions) %}
+                <a href="/session/start/{{ level.num }}/{{ i }}" class="session-card">
+                    Session {{ i + 1 }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+        
+        <a href="/" class="back-link">← Back to Menu</a>
+    </div>
+</body>
+</html>

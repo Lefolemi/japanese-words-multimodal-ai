@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environments
+venv/
+env/
+.env/
+
+# Flask & Database
+instance/
+*.sqlite3
+*.db
+
+# Temporary Application Data
+app/static/audio_temp/*.webm
+app/static/audio_temp/*.wav
+app/static/audio_temp/*.mp3
+
+# Environment Variables
+.env
+
+# VS Code / IDE
+.vscode/
+.idea/
+
+# OS generated files
+.DS_Store
+Thumbs.db

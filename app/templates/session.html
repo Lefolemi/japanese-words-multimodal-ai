@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Learning Session - JLPT {{ level }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/session.css') }}">
+    <!-- Socket.io Client -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+<body>
+    <div class="session-container">
+        <header>
+            <a href="/" class="back-btn">← Menu</a>
+            <h2>JLPT Level {{ level }}</h2>
+        </header>
+
+        <main class="word-card">
+            <!-- Hidden ID for the SocketIO pipeline -->
+            <input type="hidden" id="current-word-id" value="{{ words[0].id }}">
+
+            <div class="display-area">
+                <h1 id="word-kanji">{{ words[0].original }}</h1>
+                <p id="word-furigana">{{ words[0].furigana }}</p>
+                <p id="word-english">{{ words[0].english }}</p>
+            </div>
+
+            <div class="feedback-area">
+                <div id="score-display">Score: --%</div>
+                <div id="sensei-feedback">Ready for your pronunciation.</div>
+                <div id="user-transcription" class="sub-text"></div>
+            </div>
+
+            <div class="controls">
+                <button id="record-btn" onmousedown="startRecording()" onmouseup="stopRecording()">
+                    Hold to Speak
+                </button>
+            </div>
+        </main>
+
+        <section class="session-nav">
+            <button onclick="prevWord()" id="prev-btn" disabled>Previous</button>
+            <span id="progress-text">1 / {{ words|length }}</span>
+            <button onclick="nextWord()" id="next-btn">Next</button>
+        </section>
+    </div>
+
+    <!-- Injecting word data for JS navigation -->
+    <script>
+        const sessionWords = {{ words|tojson }};
+        let currentIndex = 0;
+    </script>
+    
+    <!-- Link to the Client Layer Logic -->
+    <script src="{{ url_for('static', filename='js/recorder.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/session.js') }}"></script>
+</body>
+</html>
