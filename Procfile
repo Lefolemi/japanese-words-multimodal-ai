@@ -1,0 +1,1 @@
+web: gunicorn -k gevent -w 1 --threads 100 run:app
