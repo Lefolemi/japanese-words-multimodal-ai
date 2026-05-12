@@ -29,3 +29,7 @@ numpy==2.4.4
 # Utilities
 requests==2.33.1
 tqdm==4.67.3
+
+# Tambahkan ini di requirements.txt
+gunicorn==23.0.0
+gevent==24.2.1
