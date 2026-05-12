@@ -29,6 +29,7 @@ numpy==2.4.4
 # Utilities
 requests==2.33.1
 tqdm==4.67.3
+python-dotenv
 
 # Tambahkan ini di requirements.txt
 gunicorn==23.0.0
