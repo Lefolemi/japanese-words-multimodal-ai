@@ -6,7 +6,8 @@ session_bp = Blueprint('session', __name__)
 # The URL must match: /session/start/<level>/<session_idx>
 @session_bp.route('/start/<int:level>/<int:session_idx>')
 def start_session(level, session_idx):
-    if level < 1 or level > 5:
+    # Restrict to level 5 only
+    if level != 5:
         abort(404)
 
     # We pass session_idx to the manager to get the specific slice

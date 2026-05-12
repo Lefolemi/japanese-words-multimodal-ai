@@ -1,37 +1,19 @@
-import os
-import time
-import uuid
+import io
+import base64
 from gtts import gTTS
 
 class TTSHandler:
-    def __init__(self):
-        self.output_dir = os.path.join('app', 'static', 'audio_responses')
-        if not os.path.exists(self.output_dir):
-            os.makedirs(self.output_dir)
-
-    def cleanup_old_files(self, max_age_seconds=30):
-        """Deletes files in the output directory older than max_age_seconds."""
-        now = time.time()
-        for f in os.listdir(self.output_dir):
-            file_path = os.path.join(self.output_dir, f)
-            if os.path.isfile(file_path):
-                if os.stat(file_path).st_mtime < (now - max_age_seconds):
-                    try:
-                        os.remove(file_path)
-                    except Exception as e:
-                        print(f"Cleanup error: {e}")
-
-    def generate_speech(self, text, lang='ja'):
-        # Clean up before generating a new one
-        self.cleanup_old_files()
-
-        filename = f"tts_{uuid.uuid4()}.mp3"
-        file_path = os.path.join(self.output_dir, filename)
-        
+    def generate_speech_base64(self, text, lang='ja'):
         try:
+            # Save audio to a memory buffer instead of a file
+            mp3_fp = io.BytesIO()
             tts = gTTS(text=text, lang=lang)
-            tts.save(file_path)
-            return f"/static/audio_responses/{filename}"
+            tts.write_to_fp(mp3_fp)
+            mp3_fp.seek(0)
+            
+            # Encode to base64 string
+            b64_data = base64.b64encode(mp3_fp.read()).decode('utf-8')
+            return f"data:audio/mp3;base64,{b64_data}"
         except Exception as e:
             print(f">>> [TTS ERROR] {e}")
             return None

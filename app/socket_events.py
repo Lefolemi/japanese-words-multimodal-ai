@@ -9,13 +9,14 @@ from app.services.stt_handler import STTHandler
 from app.services.tts_handler import TTSHandler
 from app.models.vocabulary import Vocabulary
 
-# Initialize handlers
-stt = STTHandler()
-evaluator = Evaluator()
-sensei = Sensei()
-tts = TTSHandler()
-
 def register_socket_events(socketio):
+    # Initialize handlers INSIDE the registration function
+    # This ensures they are created within the app context
+    stt = STTHandler()
+    evaluator = Evaluator()
+    sensei = Sensei() # Now it will see the API key!
+    tts = TTSHandler()
+
     def handle_audio(data):
         start_time = time.time()
         
@@ -43,24 +44,25 @@ def register_socket_events(socketio):
             # 1. Transcribe
             transcription = stt.transcribe(file_path)
 
-            # 2. Evaluation using existing Vocabulary columns
+            # 2. Evaluation
             word_id = int(raw_word_id)
             word_obj = db.session.get(Vocabulary, word_id)
-            
+
             if not word_obj:
                 raise ValueError(f"Word ID {word_id} not found.")
 
             score = evaluator.get_score(transcription, word_obj.furigana)
-            response = sensei.format_response(score, word_obj)
+
+            # 3. Brain (Gemini Feedback)
+            response = sensei.format_response(score, word_obj, transcription)
             
-            # 3. Multimodal: TTS using ONLY the Japanese text (voice_text)
-            # This prevents the TTS from reading English/Romaji in the 'message' key.
-            audio_url = tts.generate_speech(response['voice_text'])
+            # 4. Multimodal Output (Base64 TTS)
+            audio_data_uri = tts.generate_speech_base64(response['voice_text'])
             
-            # 4. Construct Final Payload
+            # 5. Construct Final Payload
             response.update({
                 'user_transcription': transcription,
-                'audio_url': audio_url,
+                'audio_url': audio_data_uri,
                 'debug': {
                     'raw_stt': transcription,
                     'normalized_input': evaluator.normalize_text(transcription),
@@ -69,7 +71,7 @@ def register_socket_events(socketio):
                 }
             })
 
-            # 5. Database Update (Existing columns only)
+            # 6. Database Update
             word_obj.times_practiced += 1
             word_obj.last_score = score
             db.session.commit()

@@ -9,10 +9,11 @@ def menu():
 @main_bp.route('/levels')
 def level_select():
     from app.core.session_manager import SessionManager
-    levels = []
-    for n in range(1, 6):
-        levels.append({
-            'num': n,
-            'total_sessions': SessionManager.get_total_sessions(level=n)
-        })
-    return render_template('level_select.html', levels=levels)
+    
+    # We only care about N5
+    n5_data = {
+        'num': 5,
+        'total_sessions': SessionManager.get_total_sessions(level=5)
+    }
+    
+    return render_template('level_select.html', levels=[n5_data])

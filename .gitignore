@@ -1,30 +1,44 @@
-# Python
+# --- Python & Cache ---
 __pycache__/
 *.py[cod]
 *$py.class
+.pytest_cache/
 
-# Virtual Environments
+# --- Virtual Environments ---
 venv/
 env/
+ENV/
 .env/
 
-# Flask & Database
-instance/
-*.sqlite3
-*.db
-
-# Temporary Application Data
-app/static/audio_temp/*.webm
-app/static/audio_temp/*.wav
-app/static/audio_temp/*.mp3
-
-# Environment Variables
+# --- Environment Variables (CRITICAL) ---
+# Jangan hapus ini agar API Key Gemini kamu tidak bocor ke GitHub
 .env
 
-# VS Code / IDE
+# --- Flask & Database ---
+instance/
+*.sqlite3
+# data/jp_game.db  <-- Jangan di-ignore jika ingin menyertakan DB awal di GitHub
+# Namun, jika database bersifat dinamis, aktifkan baris di bawah ini:
+# data/*.db
+
+# --- Temporary Application Data (Multimedia) ---
+# Mengabaikan semua file di folder temp tapi tetap menjaga foldernya
+app/static/audio_temp/*
+!app/static/audio_temp/.gitkeep
+
+# Mengabaikan file hasil TTS yang menumpuk
+app/static/audio_responses/*
+!app/static/audio_responses/.gitkeep
+
+# --- OS & IDE ---
 .vscode/
 .idea/
-
-# OS generated files
 .DS_Store
 Thumbs.db
+*.swp
+
+# --- Project Specific ---
+# Mengabaikan file audio mentah yang mungkin tersimpan di root saat testing
+*.webm
+*.wav
+*.mp3
