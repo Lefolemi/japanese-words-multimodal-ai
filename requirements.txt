@@ -17,6 +17,7 @@ pydub==0.25.1
 librosa==0.11.0
 soundfile==0.13.1
 google-generativeai
+gTTS==2.5.1
 
 # Japanese Language & Scoring Logic
 pykakasi==2.3.0
